@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Demo</title>
+    <script src="core.js" type="text/javascript"></script>
+</head>
+<body>
+    <script language="javascript">
+    
+        $flip.Utils.require("render", function() {
+            $flip.Utils.require(["actions", "input"], function() {
+                /******************************
+                 *          TESTING           *
+                 ******************************/
+                var Core = $flip.Core;
+                var Actions = $flip.Actions;
+                 
+                var materialCar1 = new Core.Material("car1.jpg");
+                var materialCar2 = new Core.Material("car2.jpg");
+                var materialFlag = new Core.Material("flag.png");
+                
+                var car1 = new Core.RenderObject(materialCar1);
+                car1.setPosition([100, 0]);
+                car1.setSize(100);
+                
+                car1.onclick = function(evt) {
+                    if(car1.actions.length > 0) {
+                        return;
+                    }
+                    
+                    var action1;
+                    if(car1.position.y > 190) {
+                        action1 = new Actions.MoveTo([100, 0], 0.5, Actions.Easing.easeOutQuad);
+                    } else {
+                        action1 = new Actions.MoveTo([100, 200], 1.0, Actions.Easing.easeOutBounce);
+                    }
+                    car1.addAction(action1);
+                };
+                
+                var car2 = new Core.RenderObject(materialCar2);
+                car2.setPosition({x: 630, y: 200});
+                car2.setSize({x: 100, y:100});
+                
+                var flag = new Core.RenderObject(materialFlag);
+                flag.setPosition({x: 638, y: 227});
+                flag.setSize(20);
+                flag.skew[0] = -0.5;
+                car2.addChild(flag);
+                
+                var actionSkew = new Actions.SkewTo([0.5, 0], 3.0, Actions.Easing.easeInOutElastic);
+                flag.addAction(actionSkew);
+                
+                var action2 = new Actions.MoveTo([210, 200], 2.0, Actions.Easing.easeOutElastic);
+                car2.addAction(action2);
+                
+                setTimeout(function() {
+                    Core.Render.start();  
+                }, 1000);
+            });
+        });
+    
+    </script>
+</body>
+</html>
