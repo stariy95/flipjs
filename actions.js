@@ -92,6 +92,46 @@ $flip.Actions = {};
     };
     
     /**
+     * Class ActionMoveBy inherits BaseAction
+     * 
+     * Usage example:
+     * 
+     * var action = new $flip.Actions.MoveBy([10, 20], 2.0, $flip.Actions.Easing.easeInOutElastic);
+     * object.addAction(action);
+     * 
+     */
+    ActionMoveBy.inherits(BaseAction);
+    
+    function ActionMoveBy(delta, duration, easeFunction) {
+        BaseAction.apply(this, [duration, easeFunction]);
+        
+        this.delta = delta;
+    }
+    
+    ActionMoveBy.prototype.setTarget = function(target) {
+        this.$super.setTarget.call(this, target);
+        
+        this.startPosition = [target.position.x, target.position.y];
+    };
+    
+    ActionMoveBy.prototype.update = function(time) {
+        this.$super.update.call(this, time);
+        
+        var x, y;
+        if(this.delta[0] !== 0) {
+            x = this.easeFunction(this.time, this.startPosition[0], this.delta[0], this.duration);
+        } else {
+            x = this.startPosition[0];
+        }
+        if(this.delta[1] !== 0) {
+            y = this.easeFunction(this.time, this.startPosition[1], this.delta[1], this.duration);
+        } else {
+            y = this.startPosition[1];
+        }
+        this.target.setPosition([x, y]);
+    };
+    
+    /**
      * Class ActionSkewTo inherits BaseAction
      * 
      * Usage example:
@@ -135,10 +175,83 @@ $flip.Actions = {};
     };
     
     
+    /**
+     * Class ActionSequence inherits BaseAction
+     * 
+     * Usage example:
+     * 
+     * 
+     * 
+     */
+    ActionSequence.inherits(BaseAction);
+    
+    function ActionSequence(actions) {
+        var duration = 0;
+        this.actions = actions;
+        this.currentActionIdx = 0;
+        this.currentAction = actions[0];
+        
+        for(var i in actions) {
+            duration += actions[i].duration / 1000;
+        }
+        
+        BaseAction.apply(this, [duration]);
+    }
+    
+    ActionSequence.prototype.setTarget = function(target) {
+        this.$super.setTarget.call(this, target);
+        this.currentAction.setTarget(target);
+    };
+    
+    ActionSequence.prototype.update = function(time) {
+        this.currentAction.update(time);
+        this.time += time;
+        
+        if(this.time > this.currentAction.duration) {
+            if(++this.currentActionIdx == this.actions.length) {
+                this.target.removeAction(this);
+                return;
+            }
+            this.currentAction = this.actions[this.currentActionIdx];
+            this.currentAction.setTarget(this.target);
+            this.time = 0;
+        }
+    };
+    
+    /**
+     * Class ActionCallFunction inherits BaseAction
+     * 
+     * Usage example:
+     * 
+     * var action = new $flip.Actions.CallFunction(function(){console.log("Hello!")});
+     * object.addAction(action);
+     * 
+     */
+    ActionCallFunction.inherits(BaseAction);
+    
+    function ActionCallFunction(callback) {
+        BaseAction.apply(this, [0]);
+        this.callback = callback;
+    }
+    
+    ActionCallFunction.prototype.setTarget = function(target) {
+        this.$super.setTarget.call(this, target);
+    };
+    
+    ActionCallFunction.prototype.update = function(time) {
+        this.$super.update.call(this, time);
+        this.callback();
+    };
+    
+    
     /**************************************************************************
      *          EASING FUNCTIONS
      **************************************************************************/
     var Easing = {
+        linear: function (t, b, c, d) {
+            return c * (t/=d) + b;
+        },
+        
         easeInQuad: function (t, b, c, d) {
             return c * (t/=d) * t + b;
         },
@@ -328,8 +441,14 @@ $flip.Actions = {};
     /**************************************************************************
      *          EXPORT
      **************************************************************************/
-    Actions.MoveTo = ActionMoveTo;
-    Actions.SkewTo = ActionSkewTo;
-    Actions.Base   = BaseAction;
-    Actions.Easing = Easing;
+    Actions.MoveTo   = ActionMoveTo;
+    Actions.MoveBy   = ActionMoveBy; 
+    Actions.SkewTo   = ActionSkewTo;
+    Actions.Base     = BaseAction;
+    Actions.Sequence = ActionSequence;
+    Actions.CallFunction = ActionCallFunction;
+    
+    Actions.Easing   = Easing;
+    
+    
 }());

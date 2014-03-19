@@ -3,60 +3,148 @@
 <head>
     <title>Demo</title>
     <script src="core.js" type="text/javascript"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body>
     <script language="javascript">
     
         $flip.Utils.require("render", function() {
-            $flip.Utils.require(["actions", "input"], function() {
-                /******************************
-                 *          TESTING           *
-                 ******************************/
-                var Core = $flip.Core;
-                var Actions = $flip.Actions;
-                 
-                var materialCar1 = new Core.Material("car1.jpg");
-                var materialCar2 = new Core.Material("car2.jpg");
-                var materialFlag = new Core.Material("flag.png");
+        $flip.Utils.require(["actions", "input", "animation", "physics"], function() {
+            /******************************
+             *          TESTING           *
+             ******************************/
+             
+            //          START
+            var Core = $flip.Core;
+            var Actions = $flip.Actions;
+            var Input = $flip.Input;
+            
+            var width = Core.Render.getCanvas().width;
+            var height = Core.Render.getCanvas().height;
+            
+            setTimeout(function(){ 
+                Core.Render.start(); 
+            }, 1000);
+            
+            
+            //          PINGUIN
+            var animation = new Core.Animation("flying-pinguin", 2, 10);
+            var pinguin = new Core.RenderObject(animation);
+            pinguin.setPosition([200, height - 50]);
+            pinguin.setSize(50);
+            
+            var pinguinFly = function(evt) {
+                if(pinguin.actions.length > 0) {
+                    pinguin.actions = [];
+                }
                 
-                var car1 = new Core.RenderObject(materialCar1);
-                car1.setPosition([100, 0]);
-                car1.setSize(100);
+                var action1 = new Actions.MoveBy([0, -60], 0.2, Actions.Easing.easeOutQuad);
+                var action2 = new Actions.MoveTo([200, height - 50], 1.0, Actions.Easing.easeOutBounce);
+                var action  = new Actions.Sequence([action1, action2]);
                 
-                car1.onclick = function(evt) {
-                    if(car1.actions.length > 0) {
-                        return;
-                    }
-                    
-                    var action1;
-                    if(car1.position.y > 190) {
-                        action1 = new Actions.MoveTo([100, 0], 0.5, Actions.Easing.easeOutQuad);
-                    } else {
-                        action1 = new Actions.MoveTo([100, 200], 1.0, Actions.Easing.easeOutBounce);
-                    }
-                    car1.addAction(action1);
-                };
+                pinguin.addAction(action);
+            };
+            
+            pinguin.oncollide = function(obj) {
+                pinguin.setCollisionEnabled(false);
+                alert("GAME OVER");
+            };
+            pinguin.setCollisionEnabled(true);
+            
+            Input.setDefaultAction(pinguinFly);
+            
+            
+            //          ICEBERG
+            var icebergPool = [];
+            for(var i=0; i<5; i++) {
+                createIceberg();
+            }
+            
+            function createIceberg() {
+                var nextItem = new Core.RenderObject("iceberg.png");
                 
-                var car2 = new Core.RenderObject(materialCar2);
-                car2.setPosition({x: 630, y: 200});
-                car2.setSize({x: 100, y:100});
+                nextItem.setSize({x:150, y:240});
+                nextItem.setPosition([width + 160, height - 240]);
+                nextItem.oncollide = function(obj) {};
+                nextItem.setCollisionEnabled(true);
                 
-                var flag = new Core.RenderObject(materialFlag);
-                flag.setPosition({x: 638, y: 227});
-                flag.setSize(20);
-                flag.skew[0] = -0.5;
-                car2.addChild(flag);
+                addIcebergToPool(nextItem);
+            }
+            
+            function addIcebergToPool(iceberg) {
+                icebergPool.push(iceberg);
+            }
+            
+            function spawnIceberg() {
+                if(icebergPool.length === 0) {
+                    createIceberg();
+                }
                 
-                var actionSkew = new Actions.SkewTo([0.5, 0], 3.0, Actions.Easing.easeInOutElastic);
-                flag.addAction(actionSkew);
+                var iceberg = icebergPool.pop();
+                iceberg.setPosition([width, height - 240]);
                 
-                var action2 = new Actions.MoveTo([210, 200], 2.0, Actions.Easing.easeOutElastic);
-                car2.addAction(action2);
+                var moveAction = new Actions.MoveTo([width / 2 - 75, height - 240], 5.0, Actions.Easing.linear);
+                var nextIceberg = new Actions.CallFunction(spawnIceberg);
+                var moveAction2 = new Actions.MoveTo([-150, height - 240], 5.0, Actions.Easing.linear);
+                var returnIceberg = new Actions.CallFunction(function(){addIcebergToPool(iceberg)});
                 
-                setTimeout(function() {
-                    Core.Render.start();  
-                }, 1000);
-            });
+                iceberg.addAction(new Actions.Sequence([moveAction, nextIceberg, moveAction2, returnIceberg]));
+            }
+            
+            spawnIceberg();
+            
+            
+            
+            // img galery
+            function Galery(images) {
+                this.images = images;
+                this.current = 0;
+                this.baseSize = {x: 300, y: 200};
+                this.position = [100, 200];
+                this.currentImg = this.createImage();
+                this.currentImg.setPosition(this.position);
+            }
+            
+            Galery.prototype.createImage = function() {
+                var img = new Core.RenderObject(this.images[this.current]);
+                img.setSize(this.baseSize);
+                return img;
+            };
+            
+            Galery.prototype.next = function() {
+                
+                this.current = (this.current + 1) % (this.images.length);
+                
+                var img = this.createImage();
+                
+                var moveOutAction = new Actions.MoveTo([-300, 200], 0.5, Actions.Easing.easeOutQuad);
+                var deleteAction = new Actions.CallFunction(function(){});
+                this.currentImg.addAction(new Actions.Sequence([moveOutAction, deleteAction]));
+                
+                var moveInAction = new Actions.MoveTo(this.position, 0.5, Actions.Easing.easeInQuad);
+                img.setPosition([300, 200]);
+                img.addAction(moveInAction);
+                
+                this.currentImg = img;
+            };
+            
+            Galery.prototype.prev = function() {
+                
+            };
+            
+            
+            // var galary = new Galery(['car1.jpg', 'car2.jpg', 'iceberg.png']);
+            
+            // var btn = new Core.RenderObject('flag.png');
+            // btn.setSize(100);
+            // btn.setPosition([250, 400]);
+            
+            // btn.onclick = function() {
+            //     galary.next();
+            // };
+            // btn.setTouchEnabled(true);
+            
+        });
         });
     
     </script>

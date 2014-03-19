@@ -43,12 +43,27 @@ $flip.Core = {};
         if(img === null) {
             var callbackMaterial = this;
             Core.TextureCache.addElement(textureName, function(img) {
-                callbackMaterial.texture = img;
+                callbackMaterial.onload(img);
             });
         } else {
             this.texture = img;
         }
     }
+    
+    Material.prototype.update = function(time) {
+        
+    };
+    
+    Material.prototype.getTexture = function() {
+        return this.texture;
+    };
+    
+    Material.prototype.onload = function(img) {
+        this.texture = img;
+        if(typeof this.afterload == 'function') {
+            this.afterload();
+        }
+    };
     
     /**
      * Class TextureCache
@@ -82,13 +97,12 @@ $flip.Core = {};
     /**
      * Class RenderObject
      * 
-     * Simple 2D quad (aka sprite), base render unit.
-     * If created without material, it will be rendered with lines.
+     * Simple 2D quad (aka sprite), base rendering unit.
+     * If created without material or texture, it will be rendered with lines.
      * 
      * Usage example:
      * 
-     * var material = new $flip.Core.Material("img.jpg");
-     * var object = new $flip.Core.RenderObject(material);
+     * var object = new $flip.Core.RenderObject("img.jpg");
      * object.setSize([100, 100]);
      * object.setPosition([250, 500]); 
      * 
@@ -97,10 +111,22 @@ $flip.Core = {};
         this.id = 0;
         this.position = {x: 0, y: 0};
         this.size = {w: 1, h: 1};
-        this.material = material;
+        
+        if(material instanceof Core.Material) {
+            this.material = material;
+        } else if(typeof material == 'string'){
+            this.material = new Core.Material(material);
+        } else {
+            this.material = {};
+        }
+        
         this.children = [];
         this.actions = [];
         this.skew = [0, 0];
+        this.parentObject = null;
+        this.touchEnabled = false;
+        this.collisionEnabled = false;
+        
         Core.Render.addObject(this);
     }
     
@@ -111,6 +137,7 @@ $flip.Core = {};
           }
           
           this.children.push(child);
+          child.parentObject = this;
     };
     
     RenderObject.prototype.addAction = function(action) {
@@ -120,6 +147,9 @@ $flip.Core = {};
     
     RenderObject.prototype.removeAction = function(action) {
         var idx = this.actions.indexOf(action);
+        if(idx == -1) {
+            return;
+        }
         this.actions.splice(idx, 1);
     };
     
@@ -127,13 +157,16 @@ $flip.Core = {};
         for(var i in this.actions) {
             this.actions[i].update(time);
         }
+        if(this.material) {
+            this.material.update(time);
+        }
     };
     
     RenderObject.prototype.render = function(context) {
         if(context) {
             context.setTransform(1, this.skew[0], this.skew[1], 1, this.position.x, this.position.y);
-            if(this.material.texture) {
-                context.drawImage(this.material.texture, 0, 0, this.size.w, this.size.h);
+            if(this.material.getTexture()) {
+                context.drawImage(this.material.getTexture(), 0, 0, this.size.w, this.size.h);
             } else {
                 context.rect(0, 0, this.size.w, this.size.h);
                 context.stroke();
@@ -190,6 +223,42 @@ $flip.Core = {};
     
     RenderObject.prototype.setSize = RenderObject.prototype.setScale;
     
+    RenderObject.prototype.setTouchEnabled = function(enabled) {
+        if(enabled == this.touchEnabled) {
+            return;
+        }
+        
+        if(typeof $flip.Input == 'undefined') {
+            console.log("No input module included");
+            return;
+        }
+        
+        this.touchEnabled = enabled;
+        if(enabled) {
+            $flip.Input.addObject(this);
+        } else {
+            $flip.Input.removeObject(this);
+        }
+    };
+    
+    RenderObject.prototype.setCollisionEnabled = function(enabled) {
+        if(enabled == this.collisionEnabled) {
+            return;
+        }
+        
+        if(typeof $flip.Physics == 'undefined') {
+            console.log("No physics module included");
+            return;
+        }
+        
+        this.collisionEnabled = enabled;
+        if(enabled) {
+            $flip.Physics.addObject(this);
+        } else {
+            $flip.Physics.removeObject(this);
+        }
+    };
+    
     /**
      * Class Render
      * 
@@ -202,9 +271,15 @@ $flip.Core = {};
         this.materials = [];
         this.canvas = document.createElement('canvas');
         this.canvas.id     = "main_canvas";
-        this.canvas.width  = 1264;
-        this.canvas.height = 640;
-        document.getElementsByTagName("body")[0].appendChild(this.canvas);
+        
+        var winSize = $flip.Utils.getWindowSize();
+        this.canvas.width  = winSize.w;
+        this.canvas.height = winSize.h;
+        this.canvas.style.margin = '0px';
+        
+        var body = document.getElementsByTagName("body")[0];
+        body.appendChild(this.canvas);
+        body.style.padding = '0px';
         
         this.context = this.canvas.getContext('2d');
     }
@@ -219,11 +294,16 @@ $flip.Core = {};
     };
     
     Render.prototype.update = function(deltaTime) {
-        this.context.clearRect(0, 0, 1264, 640);
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         for(var i in this.objects) {
-            this.objects[i].update(deltaTime);
-            this.objects[i].render(this.context);
+            var object = this.objects[i];
+            object.update(deltaTime);
+            object.render(this.context);
+        }
+        
+        if(typeof $flip.Physics == 'object') {
+            $flip.Physics.update(deltaTime);
         }
         
         requestAnimFrame(function(time) {
@@ -240,7 +320,7 @@ $flip.Core = {};
     
     Render.prototype.getCanvas = function() {
         return this.canvas;
-    }
+    };
     
     /**************************************************************************
      *          EXPORT

@@ -18,6 +18,18 @@ $flip.Utils = {};
         this.prototype.$super = parent.prototype;
     };
     
+    try {
+        document.body.addEventListener('touchmove', function(event) {event.preventDefault();}, false);
+    } catch(e) {
+        console.log(e);
+    }
+    
+    try {
+        document.addEventListener('scroll', function(event) {event.preventDefault();}, false);
+    } catch(e) {
+        console.log("No scroll event.");
+    }
+    
     
     /**************************************************************************
      *          CLASSES
@@ -43,6 +55,20 @@ $flip.Utils = {};
     
     Utils.prototype.load = function(file) {
         
+    };
+    
+    Utils.prototype.getWindowSize = function() {
+        var w,h;
+        if( window.innerWidth )
+        {
+            w = window.innerWidth;
+            h = window.innerHeight;
+        } else {
+            w = document.body.clientWidth;
+            h = document.body.clientHeight;
+        }
+        
+        return {w: w, h: h};
     };
     
     Utils.prototype.require = function(module, callback) {
@@ -78,6 +104,8 @@ $flip.Utils = {};
             document.getElementsByTagName("head")[0].appendChild(script_block);
         }
     };
+    
+    Utils.prototype.supportsTouch = ('ontouchstart' in document.documentElement);
     
     /**************************************************************************
      *          EXPORT
