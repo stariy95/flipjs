@@ -19,16 +19,20 @@ $flip.Utils.require(["actions", "input", "animation", "physics"], function() {
                 this.initAliens();
                 
                 var height = Core.Render.getCanvas().height;
+                var width = Core.Render.getCanvas().width;
+                
                 Input.setDefaultAction(function(evt) {
                     if(evt.y < (height * 0.75)) {
                         game.playerShot();
                     } else {
-                        game.playerMove(evt); 
+                        var delta = evt.x < game.player.position.x ? -width/20 : width/20;
+                        game.playerMove(delta); 
                     }
                 });
                 
                 Input.addOnKeyListener(32, game.playerShot);
-                // Input.addOnKeyListener(35, game.playerShot);
+                Input.addOnKeyListener(37, function(){game.playerMove(-width/20)});
+                Input.addOnKeyListener(39, function(){game.playerMove( width/20)});
             },
             
             initPlayer: function() {
@@ -99,8 +103,8 @@ $flip.Utils.require(["actions", "input", "animation", "physics"], function() {
             playerShot: function() {
                 var shot = new Core.RenderObject('shot.png');
                 shot.setSize({x: 10, y: 25});
-                shot.setPosition({x: this.player.position.x + 25, y: this.player.position.y - 25});
-                shot.addAction(new Actions.MoveTo([this.player.position.x + 25, -25], 6.0, Actions.Easing.linear));
+                shot.setPosition({x: game.player.position.x + 25, y: game.player.position.y - 25});
+                shot.addAction(new Actions.MoveTo([game.player.position.x + 25, -25], 6.0, Actions.Easing.linear));
                 shot.isPlayer = true;
                 shot.oncollide = function(obj) {
                     if(obj.isPlayer) {
@@ -122,9 +126,9 @@ $flip.Utils.require(["actions", "input", "animation", "physics"], function() {
                 shot.setCollisionEnabled(true);
             },
             
-            playerMove: function(evt) {
-                var width = Core.Render.getCanvas().width;
-                var delta = evt.x < game.player.position.x ? -width/20 : width/20;
+            playerMove: function(delta) {
+                // var width = Core.Render.getCanvas().width;
+                // var delta = evt.x < game.player.position.x ? -width/20 : width/20;
                 // if(this.player.actions.length === 0) {
                 this.player.actions = [];
                 this.player.addAction(new Actions.MoveBy([delta, 0], 0.1, Actions.Easing.easeInOutCubic));
