@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
     <title>Demo</title>
-    <script src="core.js" type="text/javascript"></script>
+    <script src="lib/core.js" type="text/javascript"></script>
+    <script src="sample_game.js" type="text/javascript"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body>
-    <script language="javascript">
-    
+<script language="javascript">
+    document.ontouchmove = function (event) { event.preventDefault(); }
+        // 11943039954
+        /*
         $flip.Utils.require("render", function() {
         $flip.Utils.require(["actions", "input", "animation", "physics"], function() {
             /******************************
@@ -15,18 +18,22 @@
              ******************************/
              
             //          START
+            /*
             var Core = $flip.Core;
             var Actions = $flip.Actions;
             var Input = $flip.Input;
             
-            var width = Core.Render.getCanvas().width;
-            var height = Core.Render.getCanvas().height;
+            // var width = Core.Render.getCanvas().width;
+            // var height = Core.Render.getCanvas().height;
+            
+            Core.Render.getCanvas().width  = 400;
+            Core.Render.getCanvas().height = 400;
             
             setTimeout(function(){ 
                 Core.Render.start(); 
             }, 1000);
             
-            
+            /*
             //          PINGUIN
             var animation = new Core.Animation("flying-pinguin", 2, 10);
             var pinguin = new Core.RenderObject(animation);
@@ -92,15 +99,15 @@
             }
             
             spawnIceberg();
+            */
             
-            
-            
+            /*
             // img galery
             function Galery(images) {
                 this.images = images;
                 this.current = 0;
                 this.baseSize = {x: 300, y: 200};
-                this.position = [100, 200];
+                this.position = [50, 50];
                 this.currentImg = this.createImage();
                 this.currentImg.setPosition(this.position);
             }
@@ -122,7 +129,7 @@
                 this.currentImg.addAction(new Actions.Sequence([moveOutAction, deleteAction]));
                 
                 var moveInAction = new Actions.MoveTo(this.position, 0.5, Actions.Easing.easeInQuad);
-                img.setPosition([300, 200]);
+                img.setPosition([300, 50]);
                 img.addAction(moveInAction);
                 
                 this.currentImg = img;
@@ -133,20 +140,19 @@
             };
             
             
-            // var galary = new Galery(['car1.jpg', 'car2.jpg', 'iceberg.png']);
+            var galary = new Galery(['car1.jpg', 'car2.jpg', 'iceberg.png']);
             
-            // var btn = new Core.RenderObject('flag.png');
-            // btn.setSize(100);
-            // btn.setPosition([250, 400]);
+            var btn = new Core.RenderObject('flag.png');
+            btn.setSize(100);
+            btn.setPosition([250, 300]);
             
-            // btn.onclick = function() {
-            //     galary.next();
-            // };
-            // btn.setTouchEnabled(true);
-            
+            btn.onclick = function() {
+                galary.next();
+            };
+            btn.setTouchEnabled(true);
+            */
+        /*
         });
         });
-    
-    </script>
-</body>
-</html>
+        */
+</script></body></html>

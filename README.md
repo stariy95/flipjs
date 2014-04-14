@@ -2,8 +2,8 @@
 
 
 Sample code:
-
 <code>
+
     $flip.Utils.require("render", function() {
         $flip.Utils.require(["actions", "input"], function() {
             var Core = $flip.Core;
